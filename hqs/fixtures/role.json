@@ -1,0 +1,80 @@
+[
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 10:48:42.660112",
+  "name": "Receptionist",
+  "restrict_to_domain": null,
+  "role_name": "Receptionist",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 20:11:31.532810",
+  "name": "Nursing User",
+  "restrict_to_domain": null,
+  "role_name": "Nursing User",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 20:11:31.535832",
+  "name": "Laboratory User",
+  "restrict_to_domain": null,
+  "role_name": "Laboratory User",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 20:11:31.540112",
+  "name": "Doctor",
+  "restrict_to_domain": null,
+  "role_name": "Doctor",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 20:16:07.330337",
+  "name": "Pharmacy",
+  "restrict_to_domain": null,
+  "role_name": "Pharmacy",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": "/app/reception-desks",
+  "is_custom": 0,
+  "modified": "2026-08-22 20:16:07.338805",
+  "name": "Radiology",
+  "restrict_to_domain": null,
+  "role_name": "Radiology",
+  "two_factor_auth": 0
+ }
+]

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Room Occupancy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #f4f6f8; }
+  header {
+    background: white;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #2B5BA8;
+  }
+  header img { max-height: 50px; margin-bottom: 4px; }
+  header .org-name { font-size: 1.8rem; font-weight: 900; color: #2B5BA8; }
+  header .tagline { font-size: 0.85rem; color: #888; }
+  header .clock { font-size: 1.4rem; font-weight: 700; color: #333; }
+  .banner {
+    background: #2B5BA8;
+    color: white;
+    padding: 12px 40px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 0.95rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 32px 40px;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .card-head {
+    background: #2B5BA8;
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge {
+    background: #4CAF50;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .card-body { padding: 24px 20px; text-align: center; }
+  .label { font-size: 0.8rem; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .number { font-size: 3.5rem; font-weight: 900; line-height: 1; }
+  .number.green { color: #4CAF50; }
+  .number.orange { color: #FF9800; }
+  .number.red { color: #E53935; }
+  .unit { font-size: 0.9rem; color: #777; margin-top: 4px; }
+  .dots { margin-top: 10px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 2px; }
+  .dot.green { background: #4CAF50; }
+  .dot.orange { background: #FF9800; }
+  .dot.red { background: #E53935; }
+  .now-serving { padding: 12px 20px; border-top: 1px solid #eee; font-size: 0.85rem; color: #666; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <img id="org-logo" src="" alt="Logo" style="display:none;" />
+    <div class="org-name" id="org-name">Hospital</div>
+    <div class="tagline">Room Waiting Count</div>
+  </div>
+  <div class="clock" id="clock">--:--</div>
+</header>
+<div class="banner">📊 ROOM OCCUPANCY — LIVE VIEW</div>
+<div class="grid" id="room-grid"></div>
+
+<script>
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function colorFor(count) {
+  if (count >= 5) return 'red';
+  if (count >= 3) return 'orange';
+  return 'green';
+}
+
+function renderRooms(rooms) {
+  const grid = document.getElementById('room-grid');
+  grid.innerHTML = '';
+  rooms.forEach(r => {
+    const color = colorFor(r.waiting);
+    const dots = Array(Math.min(r.waiting, 10)).fill(`<span class="dot ${color}"></span>`).join('');
+    grid.innerHTML += `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div>${r.counter}</div>
+            <div style="font-size:0.7rem; font-weight:500; opacity:0.85; text-transform:none; letter-spacing:0;">${r.room}</div>
+          </div>
+          <span class="badge">ACTIVE</span>
+        </div>
+        <div class="card-body">
+          <div class="label">Patients Waiting</div>
+          <div class="number ${color}">${r.waiting}</div>
+          <div class="unit">${r.waiting === 1 ? 'person' : 'people'}</div>
+          <div class="dots">${dots}</div>
+        </div>
+        <div class="now-serving">Now serving: ${r.serving}</div>
+      </div>
+    `;
+  });
+}
+
+function loadData() {
+  fetch('/api/method/hqs.hqs.api.get_room_occupancy')
+    .then(r => r.json())
+    .then(d => {
+      if (d.message) renderRooms(d.message);
+    });
+
+  fetch('/api/method/hqs.hqs.api.get_qms_settings')
+    .then(r => r.json())
+    .then(d => {
+      const s = d.message || {};
+      const displayName = s.display_title || s.organization_name;
+      if (displayName) {
+        document.getElementById('org-name').textContent = displayName;
+        document.title = displayName + ' — Room Occupancy';
+      }
+      if (s.logo) {
+        const img = document.getElementById('org-logo');
+        img.src = s.logo;
+        img.style.display = 'block';
+      }
+    });
+}
+
+loadData();
+setInterval(loadData, 10000);
+</script>
+</body>
+</html>

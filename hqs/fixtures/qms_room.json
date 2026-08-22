@@ -3,6 +3,12 @@
   "active": 1,
   "allowed_next_rooms": [
    {
+    "next_room": "Pharmacy"
+   },
+   {
+    "next_room": "Lab"
+   },
+   {
     "next_room": "Lab"
    },
    {
@@ -19,6 +25,15 @@
  {
   "active": 1,
   "allowed_next_rooms": [
+   {
+    "next_room": "Lab"
+   },
+   {
+    "next_room": "Triage"
+   },
+   {
+    "next_room": "Pharmacy"
+   },
    {
     "next_room": "Lab"
    },
@@ -60,6 +75,12 @@
   "active": 1,
   "allowed_next_rooms": [
    {
+    "next_room": "Pharmacy"
+   },
+   {
+    "next_room": "Lab"
+   },
+   {
     "next_room": "Lab"
    },
    {
@@ -76,6 +97,12 @@
  {
   "active": 1,
   "allowed_next_rooms": [
+   {
+    "next_room": "Pharmacy"
+   },
+   {
+    "next_room": "Lab"
+   },
    {
     "next_room": "Lab"
    },
@@ -103,6 +130,15 @@
  {
   "active": 1,
   "allowed_next_rooms": [
+   {
+    "next_room": "Consultation 3"
+   },
+   {
+    "next_room": "Consultation 2"
+   },
+   {
+    "next_room": "Consultation 1"
+   },
    {
     "next_room": "Consultation 1"
    },

@@ -290,10 +290,11 @@
             if (!d.message) return;
             const s = d.message;
 
-            if (s.organization_name) {
-                document.getElementById('org-name').textContent = s.organization_name;
-                document.getElementById('footer-name').textContent = s.organization_name + ' — Queue Management System';
-                document.title = s.organization_name + ' — Queue System';
+            const displayName = s.display_title || s.organization_name;
+            if (displayName) {
+                document.getElementById('org-name').textContent = displayName;
+                document.getElementById('footer-name').textContent = displayName + ' — Queue Management System';
+                document.title = displayName + ' — Queue System';
             }
 
             if (s.logo) {

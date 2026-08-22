@@ -21,7 +21,14 @@ var reception_desk = {
   init: function(wrapper) {
     this.wrapper = wrapper;
     $('#rp-user').text(frappe.session.user);
-    this.bind_nav_cards();
+    frappe.call({
+      method: 'hqs.hqs.api.get_my_counter',
+      callback: (r) => {
+        this.my_counter = r.message?.name || null;
+        this.my_room = r.message?.room || null;
+        this.bind_nav_cards();
+      }
+    });
     this.refresh();
     this.timer = setInterval(() => this.refresh(), 15000);
   },
@@ -73,11 +80,15 @@ var reception_desk = {
 
   bind_nav_cards: function() {
     var dept = this.department;
-    $('#nav-waiting').on('click', function() {
-      frappe.set_route('List', 'Queue Entry', { status: 'Waiting' });
+    $('#nav-waiting').on('click', () => {
+      const filters = { status: 'Waiting' };
+      if (this.my_room) filters.room = this.my_room;
+      frappe.set_route('List', 'Queue Entry', filters);
     });
-    $('#nav-called').on('click', function() {
-      frappe.set_route('List', 'Queue Entry', { status: 'Called' });
+    $('#nav-called').on('click', () => {
+      const filters = { status: 'Called' };
+      if (this.my_counter) filters.counter = this.my_counter;
+      frappe.set_route('List', 'Queue Entry', filters);
     });
     $('#nav-new').on('click', function() {
       frappe.new_doc('Queue Entry');

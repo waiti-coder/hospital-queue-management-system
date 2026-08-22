@@ -13,15 +13,14 @@ frappe.ui.form.on("Queue Entry", {
         // ── CALL PATIENT ── show when Waiting
         if (frm.doc.status === 'Waiting') {
             frm.add_custom_button(__('Call Patient'), function() {
-                frappe.db.get_value('Queue Counter',
-                    { room: frm.doc.room, is_active: 1 },
-                    'name'
-                ).then(r => {
+                frappe.call({
+                    method: 'hqs.hqs.api.get_my_counter',
+                    callback: function(r) {
                     const counter = r.message?.name;
                     if (!counter) {
                         frappe.msgprint({
                             title: __('No Counter Found'),
-                            message: __('No active counter found for room: ') + frm.doc.room,
+                            message: __('You are not assigned to an active counter. Contact your administrator.'),
                             indicator: 'red'
                         });
                         return;
@@ -49,6 +48,7 @@ frappe.ui.form.on("Queue Entry", {
                             }
                         }
                     });
+                    }
                 });
             }).addClass('btn-primary');
         }
@@ -117,10 +117,9 @@ frappe.ui.form.on("Queue Entry", {
                                             d.hide();
 
                                             // Auto-call next patient in this room
-                                            frappe.db.get_value('Queue Counter',
-                                                { room: frm.doc.room, is_active: 1 },
-                                                'name'
-                                            ).then(rc => {
+                                            frappe.call({
+                                                method: 'hqs.hqs.api.get_my_counter',
+                                                callback: function(rc) {
                                                 const counter = rc.message?.name;
                                                 if (!counter) {
                                                     frappe.set_route('List', 'Queue Entry');
@@ -145,6 +144,7 @@ frappe.ui.form.on("Queue Entry", {
                                                         }
                                                     }
                                                 });
+                                                }
                                             });
 
                                         } else {

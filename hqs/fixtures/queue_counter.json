@@ -22,7 +22,7 @@
   "room": "Reception"
  },
  {
-  "assigned_user": "lab@demo.com",
+  "assigned_user": null,
   "counter_name": "Room 7",
   "display_order": 0,
   "docstatus": 0,
@@ -55,7 +55,7 @@
   "room": "Radiology"
  },
  {
-  "assigned_user": "doc1@demo.com",
+  "assigned_user": null,
   "counter_name": "Room 1",
   "display_order": 0,
   "docstatus": 0,
@@ -98,41 +98,10 @@
   "name": "Triage",
   "room": null
  },
+
+
  {
   "assigned_user": null,
-  "counter_name": "Consultation",
-  "display_order": 0,
-  "docstatus": 0,
-  "doctype": "Queue Counter",
-  "is_active": 1,
-  "modified": "2026-04-12 15:23:32.819154",
-  "name": "Consultation",
-  "room": null
- },
- {
-  "assigned_user": null,
-  "counter_name": "OPD",
-  "display_order": 0,
-  "docstatus": 0,
-  "doctype": "Queue Counter",
-  "is_active": 1,
-  "modified": "2026-04-14 13:52:09.416252",
-  "name": "OPD",
-  "room": null
- },
- {
-  "assigned_user": null,
-  "counter_name": "Reception",
-  "display_order": 0,
-  "docstatus": 0,
-  "doctype": "Queue Counter",
-  "is_active": 1,
-  "modified": "2026-04-12 15:22:28.092705",
-  "name": "Reception",
-  "room": null
- },
- {
-  "assigned_user": "reception1@test.com",
   "counter_name": "Counter 1",
   "display_order": 1,
   "docstatus": 0,

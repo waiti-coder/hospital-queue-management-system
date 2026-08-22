@@ -137,9 +137,9 @@
 
 <header>
     <div>
-        <div class="logo-south">SOUTH <span>+B</span></div>
-        <div class="logo-hospital">H O S P I T A L</div>
-        <div class="logo-tagline">we care</div>
+        <img id="org-logo" src="" alt="Logo" style="max-height: 60px; display:none; margin-bottom: 6px;" />
+        <div id="org-name" class="logo-south">Loading...</div>
+        <div class="logo-tagline">Patient Check-In</div>
     </div>
     <div class="header-right">
         <div id="clock">--:--:--</div>
@@ -345,5 +345,23 @@
     });
 </script>
 
+<script>
+    fetch('/api/method/hqs.hqs.api.get_qms_settings')
+        .then(r => r.json())
+        .then(res => {
+            const s = res.message || {};
+            const displayName = s.display_title || s.organization_name || 'Hospital';
+
+            document.getElementById('org-name').textContent = displayName;
+            document.title = displayName + ' — Check-In';
+
+            if (s.logo) {
+                const img = document.getElementById('org-logo');
+                img.src = s.logo;
+                img.style.display = 'block';
+            }
+        })
+        .catch(err => console.error('Failed to load QMS settings', err));
+</script>
 </body>
 </html>

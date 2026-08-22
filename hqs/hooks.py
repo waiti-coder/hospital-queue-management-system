@@ -18,11 +18,18 @@ fixtures = [
         "filters": [["active", "=", 1]]
     },
     {
-        "doctype": "Queue Counter",
-        "filters": [["is_active", "=", 1]]
+        "doctype": "QMS Room Routing"
     },
     {
-        "doctype": "QMS Room Routing"
+        "doctype": "Role",
+        "filters": [["name", "in", [
+            "Receptionist",
+            "Nursing User",
+            "Laboratory User",
+            "Doctor",
+            "Pharmacy",
+            "Radiology"
+        ]]]
     }
 ]
 

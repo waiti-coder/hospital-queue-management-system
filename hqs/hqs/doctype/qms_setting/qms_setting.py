@@ -28,4 +28,4 @@ class QMSSetting(Document):
 		token_reset_time: DF.Time | None
 	# end: auto-generated types
 
-	pass
+	_DOCTYPE_NAME = "QMS Setting"

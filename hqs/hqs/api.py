@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import get_site_path
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +62,7 @@ def get_qms_settings():
         "token_prefix": settings.token_prefix or "T",
         "logo": settings.logo or None,
         "organization_name": settings.organization_name or "Hospital",
+        "display_title": settings.display_title or settings.organization_name or "Hospital",
         "kiosk_title": settings.kiosk_title or "Queue Management System",
         "receipt_header": settings.receipt_header or "Hospital",
         "receipt_footer": settings.receipt_footer or "Thank You",
@@ -145,6 +147,8 @@ def create_patient_visit(phone: str, full_name: str, reason_for_visit: str = "")
     })
     entry.insert(ignore_permissions=True)
     frappe.db.commit()
+
+    print_receipt({"token": entry.token_number, "full_name": full_name})
 
     return {
         "token": entry.token_number,
@@ -338,6 +342,16 @@ def peek_next_patient(room: str):
 @frappe.whitelist()
 def call_next_patient(room: str, counter: str, queue_entry: str = None):
     """Calls the next patient in the room queue."""
+    already_called = frappe.db.count("Queue Entry", {
+        "room": room,
+        "status": "Called"
+    })
+    if already_called >= 1:
+        return {
+            "success": False,
+            "message": f"Cannot call more patients — {room} already has a patient called. Please serve them first."
+        }
+
     if queue_entry:
         entry = frappe.get_doc("Queue Entry", queue_entry)
     else:
@@ -516,3 +530,83 @@ def set_default_route(**kwargs):
         frappe.response["home_page"] = "/desk/reception-desks"
 
         
+def print_receipt(visit):
+    """Print a full receipt-style ticket on the configured network thermal printer.
+    Fails silently (logs error) so a printer issue never blocks check-in."""
+    settings = frappe.get_single("QMS Setting")
+
+    if not settings.enable_printing:
+        return
+
+    if not settings.printer_ip_address:
+        frappe.log_error("QMS Printing", "enable_printing is on but no printer_ip_address set")
+        return
+
+    try:
+        from escpos.printer import Network
+
+        printer = Network(settings.printer_ip_address, timeout=5)
+
+        if settings.logo:
+            try:
+                logo_path = get_site_path("public", settings.logo.lstrip("/"))
+                printer.image(logo_path)
+            except Exception:
+                frappe.log_error("QMS Printing", frappe.get_traceback())
+
+        printer.set(align="center", bold=True, width=2, height=2)
+        printer.text(f"{settings.organization_name or ''}\n")
+
+        printer.set(align="center", bold=False, width=1, height=1)
+        if settings.receipt_header:
+            printer.text(f"{settings.receipt_header}\n")
+        printer.text("-" * 32 + "\n")
+
+        printer.set(align="center", bold=True, width=3, height=3)
+        printer.text(f"{visit.get('token')}\n")
+
+        printer.set(align="center", bold=False, width=1, height=1)
+        printer.text("-" * 32 + "\n")
+        printer.set(align="left")
+        printer.text(f"Name: {visit.get('full_name', '')}\n")
+        printer.text(f"Time: {frappe.utils.now_datetime().strftime('%Y-%m-%d %H:%M')}\n")
+
+        if settings.receipt_footer:
+            printer.set(align="center")
+            printer.text("-" * 32 + "\n")
+            printer.text(f"{settings.receipt_footer}\n")
+
+        printer.cut()
+        printer.close()
+
+    except Exception:
+        frappe.log_error("QMS Printing", frappe.get_traceback())
+
+
+# ---------------------------------------------------------------------------
+# ROOM OCCUPANCY DISPLAY
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_room_occupancy():
+    """Returns waiting/serving counts per active counter, for the public display screen."""
+    counters = frappe.get_all("Queue Counter",
+        filters={"is_active": 1},
+        fields=["name", "counter_name", "room"],
+        order_by="room asc, display_order asc"
+    )
+
+    result = []
+    for c in counters:
+        if not c.room:
+            continue
+        waiting = frappe.db.count("Queue Entry", {"room": c.room, "status": "Waiting"})
+        serving = frappe.db.count("Queue Entry", {"room": c.room, "status": ["in", ["Called", "Serving"]]})
+        result.append({
+            "counter": c.counter_name or c.name,
+            "room": c.room,
+            "waiting": waiting,
+            "serving": serving
+        })
+
+    return result
