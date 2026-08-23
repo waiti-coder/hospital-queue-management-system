@@ -53,6 +53,13 @@
    "reqd": 1
   },
   {
+   "fieldname": "is_return",
+   "fieldtype": "Check",
+   "label": "Return Visit",
+   "description": "Patient is returning from another room (e.g. Lab back to Doctor) \u2014 placed at front of queue.",
+   "default": "0"
+  },
+  {
    "fieldname": "column_break_vpji",
    "fieldtype": "Column Break"
   },

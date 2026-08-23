@@ -228,7 +228,7 @@ def get_allowed_next_rooms(room: str):
 
 
 @frappe.whitelist()
-def send_to_next_room(queue_entry: str, next_room: str, notes: str = ""):
+def send_to_next_room(queue_entry: str, next_room: str, notes: str = "", is_return: int = 0):
     """Clerk selects which room to send the patient to next."""
     entry = frappe.get_doc("Queue Entry", queue_entry)
 
@@ -250,6 +250,8 @@ def send_to_next_room(queue_entry: str, next_room: str, notes: str = ""):
             "status": "Waiting",
             "token_number": entry.token_number,
             "current_step": (entry.current_step or 0) + 1,
+            "previous_room": entry.room,
+            "is_return": 1 if int(is_return or 0) else 0,
         })
         new_entry.insert(ignore_permissions=True)
 
@@ -343,13 +345,13 @@ def peek_next_patient(room: str):
 def call_next_patient(room: str, counter: str, queue_entry: str = None):
     """Calls the next patient in the room queue."""
     already_called = frappe.db.count("Queue Entry", {
-        "room": room,
+        "counter": counter,
         "status": "Called"
     })
     if already_called >= 1:
         return {
             "success": False,
-            "message": f"Cannot call more patients — {room} already has a patient called. Please serve them first."
+            "message": "Cannot call more patients — you already have a patient called. Please serve them first."
         }
 
     if queue_entry:
@@ -358,12 +360,17 @@ def call_next_patient(room: str, counter: str, queue_entry: str = None):
         priority_order = {"Emergency": 0, "Urgent": 1, "Normal": 2}
         waiting = frappe.get_all("Queue Entry",
             filters={"status": "Waiting", "room": room},
-            fields=["name", "token_number", "priority", "patient"],
+            fields=["name", "token_number", "priority", "patient", "is_return"],
             order_by="enqueued_at asc"
         )
         if not waiting:
             return {"success": False, "message": "No patients waiting"}
-        waiting = sorted(waiting, key=lambda x: priority_order.get(x.get("priority"), 3))
+        # Return visits always go first, regardless of priority — they've already
+        # been through part of the process and shouldn't wait behind fresh walk-ins.
+        waiting = sorted(
+            waiting,
+            key=lambda x: (0 if x.get("is_return") else 1, priority_order.get(x.get("priority"), 3))
+        )
         entry = frappe.get_doc("Queue Entry", waiting[0].name)
 
     entry.status = "Called"

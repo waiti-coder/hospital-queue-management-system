@@ -94,6 +94,12 @@ frappe.ui.form.on("Queue Entry", {
                                     reqd: 1
                                 },
                                 {
+                                    fieldtype: 'Check',
+                                    fieldname: 'is_return',
+                                    label: 'This is a return visit (send to front of queue)',
+                                    default: 0
+                                },
+                                {
                                     fieldtype: 'Small Text',
                                     fieldname: 'notes',
                                     label: 'Clinical Notes (optional)'
@@ -106,7 +112,8 @@ frappe.ui.form.on("Queue Entry", {
                                     args: {
                                         queue_entry: frm.doc.name,
                                         next_room: values.next_room,
-                                        notes: values.notes || ''
+                                        notes: values.notes || '',
+                                        is_return: values.is_return ? 1 : 0
                                     },
                                     callback: function(res) {
                                         if (res.message && res.message.success) {
