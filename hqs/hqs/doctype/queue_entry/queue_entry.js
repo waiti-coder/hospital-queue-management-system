@@ -194,6 +194,59 @@ frappe.ui.form.on("Queue Entry", {
                     }
                 );
             }).addClass('btn-default');
+
+            // ── DONE & CALL NEXT ── mark done, then auto-call the next waiting patient
+            frm.add_custom_button(__('Done & Call Next'), function() {
+                frappe.call({
+                    method: 'hqs.hqs.api.mark_done_and_call_next',
+                    args: { queue_entry: frm.doc.name },
+                    callback: function(r) {
+                        if (!r.message || !r.message.success) {
+                            frappe.show_alert({
+                                message: r.message?.message || __('Error'),
+                                indicator: 'red'
+                            });
+                            return;
+                        }
+                        if (r.message.next_called) {
+                            frappe.show_alert({
+                                message: __('Done. Now calling ') + r.message.next.token,
+                                indicator: 'blue'
+                            }, 4);
+                            frappe.set_route('Form', 'Queue Entry', r.message.next.queue_entry);
+                        } else {
+                            frappe.show_alert({
+                                message: __('Marked Done. ') + (r.message.next?.message || __('No more patients waiting')),
+                                indicator: 'green'
+                            }, 4);
+                            frappe.set_route('List', 'Queue Entry');
+                        }
+                    }
+                });
+            }).addClass('btn-primary');
+        }
+
+        // ── CALL AGAIN ── re-announce, show when Called
+        if (frm.doc.status === 'Called') {
+            frm.add_custom_button(__('Call Again'), function() {
+                frappe.call({
+                    method: 'hqs.hqs.api.recall_patient',
+                    args: { queue_entry: frm.doc.name },
+                    callback: function(r) {
+                        if (r.message && r.message.success) {
+                            frappe.show_alert({
+                                message: r.message.message,
+                                indicator: 'blue'
+                            });
+                        } else {
+                            frappe.show_alert({
+                                message: r.message?.message || __('Error'),
+                                indicator: 'red'
+                            });
+                        }
+                    }
+                });
+            }).addClass('btn-warning');
         }
 
         // ── NO SHOW ── show when Called

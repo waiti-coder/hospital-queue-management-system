@@ -21,7 +21,9 @@
   "current_step",
   "served_at",
   "enqueued_at",
-  "column_break_zpyv"
+  "column_break_zpyv",
+  "is_return",
+  "note"
  ],
  "fields": [
   {
@@ -53,11 +55,11 @@
    "reqd": 1
   },
   {
+   "default": "0",
+   "description": "Patient is returning from another room (e.g. Lab back to Doctor) \u2014 placed at front of queue.",
    "fieldname": "is_return",
    "fieldtype": "Check",
-   "label": "Return Visit",
-   "description": "Patient is returning from another room (e.g. Lab back to Doctor) \u2014 placed at front of queue.",
-   "default": "0"
+   "label": "Return Visit"
   },
   {
    "fieldname": "column_break_vpji",
@@ -129,12 +131,17 @@
    "label": "Previous Room",
    "options": "QMS Room",
    "read_only": 1
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-04 21:06:26.201938",
+ "modified": "2026-08-26 17:17:23.083730",
  "modified_by": "Administrator",
  "module": "hqs",
  "name": "Queue Entry",

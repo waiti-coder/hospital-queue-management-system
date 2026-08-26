@@ -238,7 +238,7 @@ def send_to_next_room(queue_entry: str, next_room: str, notes: str = "", is_retu
     entry.status = "Done"
     entry.served_at = frappe.utils.now()
     if notes:
-        entry.notes = notes
+        entry.note = notes
     entry.save(ignore_permissions=True)
 
     if next_room:
@@ -252,6 +252,7 @@ def send_to_next_room(queue_entry: str, next_room: str, notes: str = "", is_retu
             "current_step": (entry.current_step or 0) + 1,
             "previous_room": entry.room,
             "is_return": 1 if int(is_return or 0) else 0,
+            "note": notes or "",
         })
         new_entry.insert(ignore_permissions=True)
 
@@ -617,3 +618,75 @@ def get_room_occupancy():
         })
 
     return result
+
+
+@frappe.whitelist()
+def recall_patient(queue_entry: str):
+    """Re-announces a patient who is already Called, without affecting the queue or call limits."""
+    doc = frappe.get_doc("Queue Entry", queue_entry)
+
+    if doc.status != "Called":
+        return {"success": False, "message": "Patient is not currently called"}
+
+    frappe.publish_realtime("queue_recall", {
+        "token_number": doc.token_number,
+        "counter": doc.counter,
+        "room": doc.room
+    })
+
+    frappe.cache().set_value(
+        "queue_recall_marker",
+        frappe.utils.get_datetime_str(frappe.utils.now_datetime()) + "|" + doc.token_number + "|" + (doc.counter or doc.room or ""),
+        expires_in_sec=30
+    )
+
+    return {"success": True, "message": "Recalled " + doc.token_number}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_recent_recall():
+    """Returns the most recent recall marker, if any, for the public display to re-announce."""
+    marker = frappe.cache().get_value("queue_recall_marker")
+    if not marker:
+        return None
+    parts = marker.split("|", 2)
+    if len(parts) != 3:
+        return None
+    return {"timestamp": parts[0], "token_number": parts[1], "counter": parts[2]}
+
+
+@frappe.whitelist()
+def mark_done_and_call_next(queue_entry: str):
+    """Marks the current patient Done, then immediately calls the next
+    waiting patient in the same room to the same counter."""
+    entry = frappe.get_doc("Queue Entry", queue_entry)
+
+    if entry.status not in ["Called", "Serving"]:
+        return {"success": False, "message": "Patient is not currently being served"}
+
+    room = entry.room
+    counter = entry.counter or frappe.db.get_value(
+        "Queue Counter", {"assigned_user": frappe.session.user, "is_active": 1}, "name"
+    )
+
+    entry.status = "Done"
+    entry.served_at = frappe.utils.now()
+    entry.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    if not counter:
+        return {
+            "success": True,
+            "done_token": entry.token_number,
+            "next_called": False,
+            "message": entry.token_number + " marked Done. No counter found to call next."
+        }
+
+    next_result = call_next_patient(room=room, counter=counter)
+
+    return {
+        "success": True,
+        "done_token": entry.token_number,
+        "next_called": bool(next_result.get("success")),
+        "next": next_result
+    }

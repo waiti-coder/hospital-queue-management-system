@@ -16,10 +16,13 @@ class QueueEntry(Document):
         counter: DF.Link | None
         current_step: DF.Int
         enqueued_at: DF.Datetime | None
+        is_return: DF.Check
         name: DF.Int | None
         next_room: DF.Link | None
+        note: DF.SmallText | None
         patient: DF.Link
         phone_numberid: DF.Data | None
+        previous_room: DF.Link | None
         priority: DF.Literal["Normal", "Urgent", "Emergency"]
         room: DF.Link
         served_at: DF.Datetime | None

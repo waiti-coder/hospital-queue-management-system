@@ -257,8 +257,48 @@
         if (_soundEnabled && 'speechSynthesis' in window) {
             const test = new SpeechSynthesisUtterance('Audio enabled');
             test.volume = 0.1;
+            test.voice = getPreferredVoice();
             window.speechSynthesis.speak(test);
         }
+    }
+
+    // ── VOICE SELECTION (prefer a female voice) ──
+    let _cachedVoice = null;
+    let _voicesLoaded = false;
+
+    function pickFemaleVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices.length) return null;
+
+        const femaleNameHints = [
+            'female', 'samantha', 'victoria', 'karen', 'moira', 'tessa',
+            'zira', 'susan', 'fiona', 'kate', 'serena', 'allison', 'ava',
+            'google uk english female', 'google us english'
+        ];
+
+        let match = voices.find(v =>
+            femaleNameHints.some(hint => v.name.toLowerCase().includes(hint))
+        );
+        if (match) return match;
+
+        // Fallback: first English voice available
+        match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+        return match || voices[0] || null;
+    }
+
+    function getPreferredVoice() {
+        if (_cachedVoice) return _cachedVoice;
+        _cachedVoice = pickFemaleVoice();
+        return _cachedVoice;
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = function() {
+            _cachedVoice = pickFemaleVoice();
+            _voicesLoaded = true;
+        };
+        // Some browsers already have voices ready without the event firing
+        pickFemaleVoice();
     }
 
     function announceToken(token, counterName) {
@@ -267,8 +307,9 @@
         window.speechSynthesis.cancel();
         const text = `Token ${token.split('').join(' ')}, please proceed to ${counterName}`;
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 0.85;
-        msg.pitch = 1;
+        msg.voice = getPreferredVoice();
+        msg.rate = 0.7;
+        msg.pitch = 1.1;
         msg.volume = 1;
         window.speechSynthesis.speak(msg);
     }
@@ -373,7 +414,24 @@
     }
 
     fetchQueue();
+    let _lastRecallTimestamp = null;
+
+    function checkForRecall() {
+        fetch('/api/method/hqs.hqs.api.get_recent_recall')
+            .then(r => r.json())
+            .then(d => {
+                const marker = d.message;
+                if (!marker) return;
+                if (marker.timestamp !== _lastRecallTimestamp) {
+                    _lastRecallTimestamp = marker.timestamp;
+                    announceToken(marker.token_number, marker.counter || 'the counter');
+                }
+            })
+            .catch(() => {});
+    }
+
     setInterval(fetchQueue, 5000);
+    setInterval(checkForRecall, 3000);
 </script>
 
 </body>
