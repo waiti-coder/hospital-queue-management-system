@@ -100,6 +100,12 @@ frappe.ui.form.on("Queue Entry", {
                                     default: 0
                                 },
                                 {
+                                    fieldtype: 'Check',
+                                    fieldname: 'take_break',
+                                    label: 'Take a break (pause my counter, no auto-call next)',
+                                    default: 0
+                                },
+                                {
                                     fieldtype: 'Small Text',
                                     fieldname: 'notes',
                                     label: 'Clinical Notes (optional)'
@@ -122,6 +128,21 @@ frappe.ui.form.on("Queue Entry", {
                                                 indicator: 'green'
                                             }, 4);
                                             d.hide();
+
+                                            if (values.take_break) {
+                                                frappe.call({
+                                                    method: 'hqs.hqs.api.set_my_break',
+                                                    args: { on_break: 1 },
+                                                    callback: function(bres) {
+                                                        frappe.show_alert({
+                                                            message: bres.message?.message || __('You are now on break.'),
+                                                            indicator: 'orange'
+                                                        }, 4);
+                                                        frappe.set_route('List', 'Queue Entry');
+                                                    }
+                                                });
+                                                return;
+                                            }
 
                                             // Auto-call next patient in this room
                                             frappe.call({
@@ -305,6 +326,8 @@ frappe.listview_settings['Queue Entry'] = {
                 listview.page.add_primary_button(__('Call Next'), function() {
                     _doCallNext(myRoom, myCounter, listview);
                 });
+
+                _addPauseButton(listview, r.message);
             }
         });
     },
@@ -412,4 +435,33 @@ function _callPatient(room, counter, queue_entry, listview) {
             }
         }
     });
+}
+
+function _addPauseButton(listview, counter_info) {
+    const render = (on_break) => {
+        const label = on_break ? __('Resume Counter') : __('Pause Counter');
+        const btn = listview.page.add_inner_button(label, function() {
+            frappe.call({
+                method: 'hqs.hqs.api.toggle_my_break',
+                callback: function(res) {
+                    if (res.message && res.message.success) {
+                        frappe.show_alert({
+                            message: res.message.message,
+                            indicator: res.message.on_break ? 'orange' : 'green'
+                        }, 4);
+                        render(res.message.on_break);
+                    } else {
+                        frappe.show_alert({
+                            message: res.message?.message || __('Error'),
+                            indicator: 'red'
+                        });
+                    }
+                }
+            });
+        });
+        if (on_break) {
+            btn.removeClass('btn-default').addClass('btn-warning');
+        }
+    };
+    render(!!counter_info.on_break);
 }

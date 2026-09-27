@@ -34,6 +34,13 @@
    "label": "Is Active"
   },
   {
+   "fieldname": "on_break",
+   "fieldtype": "Check",
+   "label": "On Break",
+   "default": "0",
+   "description": "Staff-controlled pause - while checked, no new patients are auto-assigned to this counter."
+  },
+  {
    "fieldname": "assigned_user",
    "fieldtype": "Link",
    "label": "Assigned User",

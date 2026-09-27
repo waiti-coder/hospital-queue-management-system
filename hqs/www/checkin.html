@@ -131,6 +131,32 @@
             font-size: 0.8rem;
             color: #888;
         }
+.print-receipt { display: none; }
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
+@media print {
+    body * { visibility: hidden; }
+    #print-receipt, #print-receipt * { visibility: visible; }
+    #print-receipt {
+        display: block;
+        position: absolute;
+        top: 0; left: 0;
+        width: 80mm;
+        padding: 6px;
+        font-family: monospace;
+        text-align: center;
+    }
+    .pr-logo-wrap img { max-height: 50px; margin-bottom: 6px; }
+    .pr-orgname { font-size: 1.1rem; font-weight: 900; }
+    .pr-header { font-size: 0.85rem; margin-bottom: 6px; }
+    .pr-token { font-size: 2rem; font-weight: 900; margin: 8px 0; }
+    .pr-ahead { font-size: 0.85rem; color: #333; margin-bottom: 6px; }
+    .pr-room { font-size: 1rem; margin-bottom: 4px; }
+    .pr-datetime { font-size: 0.75rem; color: #333; }
+    .pr-footer { font-size: 0.8rem; margin-top: 8px; }
+}
     </style>
 </head>
 <body>
@@ -163,13 +189,13 @@
             <div class="form-group">
                 <label>Phone Number / ID</label>
                 <input type="tel" id="phone-input" placeholder="e.g. 0712 345 678"
-                    maxlength="20" oninput="onPhoneInput()" />
+                    maxlength="20" oninput="onPhoneInput()" autocomplete="off" autocorrect="off" />
                 <div class="error-msg" id="phone-error">Please enter a valid phone number or ID</div>
             </div>
 
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="name-input" placeholder="Enter your full name" />
+                <input type="text" id="name-input" placeholder="Enter your full name" autocomplete="off" autocorrect="off" />
                 <div class="error-msg" id="name-error">Please enter your full name</div>
             </div>
 
@@ -237,7 +263,7 @@
         banner.style.display = 'none';
 
         if (lookupTimer) clearTimeout(lookupTimer);
-        if (phone.length < 9) return;
+        if (phone.length < 7) return;
 
         lookupTimer = setTimeout(() => {
             fetch('/api/method/hqs.hqs.api.check_patient?phone=' + encodeURIComponent(phone), {
@@ -245,10 +271,7 @@
             })
             .then(r => r.json())
             .then(data => {
-                if (data.message && data.message.exists) {
-                    nameInput.value = data.message.name;
-                    banner.style.display = 'block';
-                }
+                // Auto-fill removed per request — no longer prefills the name field
             })
             .catch(() => {});
         }, 600);
@@ -262,7 +285,7 @@
         const nameErr = document.getElementById('name-error');
 
         let valid = true;
-        if (!phone || phone.length < 9) {
+        if (!phone || phone.length < 7) {
             phoneErr.style.display = 'block';
             valid = false;
         } else {
@@ -302,6 +325,7 @@
                 document.getElementById('token-display').textContent = data.message.token;
                 document.getElementById('room-display').textContent = data.message.room || 'Reception';
                 showScreen('screen-token');
+                printTicket(data.message);
                 startCountdown();
             } else {
                 alert('Something went wrong. Please try again or speak to staff.');
@@ -315,6 +339,29 @@
     }
 
     // ── COUNTDOWN ──
+function printTicket(msg) {
+    const s = window._qmsSettings || {};
+    const displayName = s.display_title || s.organization_name || 'Hospital';
+
+    document.getElementById('pr-orgname').textContent = displayName;
+    document.getElementById('pr-header').textContent = s.receipt_header || '';
+    document.getElementById('pr-footer').textContent = s.receipt_footer || '';
+    document.getElementById('pr-token').textContent = msg.token || '';
+    const ahead = msg.people_ahead || 0;
+    document.getElementById('pr-ahead').textContent = ahead > 0 ? (ahead + ' ahead of you') : "You're next!";
+    document.getElementById('pr-datetime').textContent = new Date().toLocaleString();
+
+    const logoImg = document.getElementById('pr-logo');
+    if (s.logo) {
+        logoImg.src = s.logo;
+        logoImg.style.display = 'inline-block';
+    } else {
+        logoImg.style.display = 'none';
+    }
+
+    setTimeout(() => { window.print(); }, 300);
+}
+
     function startCountdown() {
         let count = 10;
         document.getElementById('countdown').textContent = count;
@@ -350,18 +397,35 @@
         .then(r => r.json())
         .then(res => {
             const s = res.message || {};
+            window._qmsSettings = s;
             const displayName = s.display_title || s.organization_name || 'Hospital';
 
-            document.getElementById('org-name').textContent = displayName;
             document.title = displayName + ' — Check-In';
 
+            const orgNameEl = document.getElementById('org-name');
             if (s.logo) {
                 const img = document.getElementById('org-logo');
                 img.src = s.logo;
                 img.style.display = 'block';
+                // Logo already shows the hospital name graphically — hide the text to avoid repeating it
+                orgNameEl.style.display = 'none';
+            } else {
+                orgNameEl.textContent = displayName;
+                orgNameEl.style.display = 'block';
             }
         })
         .catch(err => console.error('Failed to load QMS settings', err));
 </script>
+<div id="print-receipt" class="print-receipt">
+    <div class="pr-logo-wrap"><img id="pr-logo" src="" alt="" /></div>
+    <div class="pr-orgname" id="pr-orgname"></div>
+    <div class="pr-header" id="pr-header"></div>
+    <hr/>
+    <div class="pr-token" id="pr-token"></div>
+    <div class="pr-ahead" id="pr-ahead"></div>
+    <div class="pr-datetime" id="pr-datetime"></div>
+    <hr/>
+    <div class="pr-footer" id="pr-footer"></div>
+</div>
 </body>
 </html>

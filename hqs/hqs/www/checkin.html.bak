@@ -322,6 +322,25 @@
             return;
         }
         err.style.display = 'none';
+        currentPhone = phone;
+
+        fetch('/api/method/hqs.hqs.api.check_patient', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Frappe-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({phone: phone})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message && data.message.exists) {
+                document.getElementById('returning-name').textContent = data.message.name;
+                document.getElementById('returning-phone').textContent = phone;
+                showScreen('screen-returning');
+            } else {
+                showScreen('screen-new');
             }
         })
         .catch(() => showScreen('screen-new'));

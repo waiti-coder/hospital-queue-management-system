@@ -34,3 +34,4 @@ fixtures = [
 ]
 
 on_session_creation = "hqs.hqs.api.set_default_route"
+app_logo_url = "/files/hosi.jpg"

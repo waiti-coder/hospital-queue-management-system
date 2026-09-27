@@ -173,7 +173,7 @@ def get_least_busy_counter(room_name="Reception"):
         return None
 
     counters = frappe.get_all("Queue Counter",
-        filters={"room": room, "is_active": 1},
+        filters={"room": room, "is_active": 1, "on_break": 0},
         fields=["name"]
     )
     if not counters:
@@ -297,7 +297,7 @@ def get_my_counter():
     counter = frappe.db.get_value(
         "Queue Counter",
         {"assigned_user": user, "is_active": 1},
-        ["name", "counter_name", "room"],
+        ["name", "counter_name", "room", "on_break"],
         as_dict=True
     )
     return counter or {}
@@ -689,4 +689,49 @@ def mark_done_and_call_next(queue_entry: str):
         "done_token": entry.token_number,
         "next_called": bool(next_result.get("success")),
         "next": next_result
+    }
+
+
+@frappe.whitelist()
+def toggle_my_break():
+    """Toggles the on_break status for the current user's own Queue Counter."""
+    counter = frappe.db.get_value(
+        "Queue Counter",
+        {"assigned_user": frappe.session.user, "is_active": 1},
+        ["name", "on_break"],
+        as_dict=True
+    )
+    if not counter:
+        return {"success": False, "message": "No active counter assigned to you."}
+
+    new_state = 0 if counter.on_break else 1
+    frappe.db.set_value("Queue Counter", counter.name, "on_break", new_state)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "on_break": bool(new_state),
+        "message": "You are now on break." if new_state else "You are back online."
+    }
+
+
+@frappe.whitelist()
+def set_my_break(on_break: int = 1):
+    """Directly sets (not toggles) the on_break status for the current user's own Queue Counter."""
+    counter = frappe.db.get_value(
+        "Queue Counter",
+        {"assigned_user": frappe.session.user, "is_active": 1},
+        "name"
+    )
+    if not counter:
+        return {"success": False, "message": "No active counter assigned to you."}
+
+    state = 1 if int(on_break) else 0
+    frappe.db.set_value("Queue Counter", counter, "on_break", state)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "on_break": bool(state),
+        "message": "You are now on break." if state else "You are back online."
     }

@@ -41,9 +41,16 @@ class QueueEntry(Document):
         # Pull prefix from QMS Setting
         prefix = frappe.db.get_single_value("QMS Setting", "token_prefix") or "T"
 
-        count = frappe.db.count("Queue Entry", filters={
-            "creation": [">=", today]
-        })
+        # Count DISTINCT tokens issued today, not raw rows — a room transfer
+        # creates a new Queue Entry row but reuses the same token_number,
+        # so counting rows would burn a number for every transfer and cause
+        # visible gaps in the sequence (e.g. HQ-001 then HQ-003, HQ-002 never seen).
+        result = frappe.db.sql("""
+            SELECT COUNT(DISTINCT token_number)
+            FROM `tabQueue Entry`
+            WHERE creation >= %s
+        """, (today,))
+        count = result[0][0] if result and result[0][0] else 0
         return f"{prefix}-{str(count + 1).zfill(3)}"
 
     def on_update(self):
